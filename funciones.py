@@ -7,10 +7,14 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.support.ui import Select
 from time import sleep
 import sys
 import textwrap
 from typing import Optional
+from dotenv import load_dotenv
+import os
+
 
 
 class Singleton:
@@ -70,11 +74,33 @@ class BaseChatBot(Singleton):
         palabra_parcial = ''
         texto_cache = ''
 
-        while True:
+        wait = WebDriverWait(self.driver, 10)
+        elements = wait.until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[1]/main/div[2]/div[3]/div[1]/div')))
+
+        num_elements = len(elements)
+
+        xpath_respuesta = f'/html/body/div[1]/main/div[2]/div[3]/div[1]/div[{num_elements}]/div/div[2]/div[1]'
+
+        respuesta = ''
+        output = st.empty()
+        palabra_parcial = ''
+        texto_cache = ''
+
+        # Esperar a que al menos un elemento coincida con el patrón de la XPath
+        wait = WebDriverWait(self.driver, 10)
+        elements = wait.until(EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[1]/main/div[2]/div[3]/div[1]/div')))
+
+        # Determinar cuántos elementos se han cargado
+        num_elements = len(elements)
+
+        # Crear la XPath de la respuesta utilizando el número más alto de elementos
+        xpath_respuesta = f'/html/body/div[1]/main/div[2]/div[3]/div[1]/div[{num_elements}]/div/div[2]/div[1]'
+
+        while True: 
             sleep(3)
             try:
                 elements = WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_all_elements_located((By.XPATH, '/html/body/div[1]/main/div[2]/div[3]/div[1]/div[4]/div/div[2]/div[1]'))
+                    EC.presence_of_all_elements_located((By.XPATH, xpath_respuesta))
                 )
                 nueva_respuesta = ' '.join([element.text for element in elements])
 
@@ -95,7 +121,7 @@ class BaseChatBot(Singleton):
                             respuesta = nueva_respuesta
                 else:
                     sleep(2)
-                    elements = self.driver.find_elements(By.XPATH, '/html/body/div[1]/main/div[2]/div[3]/div[1]/div[4]/div/div[2]/div[1]')
+                    elements = self.driver.find_elements(By.XPATH, xpath_respuesta)
                     nueva_respuesta = ' '.join([element.text for element in elements])
 
                     if nueva_respuesta == respuesta:
@@ -122,11 +148,35 @@ class BaseChatBot(Singleton):
             texto_cache += palabra_parcial
         output.text(textwrap.fill(texto_cache, 80))
 
+load_dotenv() # cargando variables de entorno desde el .env
 
 class PataChatBot(BaseChatBot):
 
     def prender_ia(self):
-        super().prender_ia('https://chat.forefront.ai')  # Ejemplo de URL para la IA de Pata
+        super().prender_ia(os.getenv('link'))  # Ejemplo de URL para la IA de Pata
+        
+
+        google_click = self.driver.find_element(By.XPATH, value='//*[@id="__next"]/div/div/div/div/div[3]/div[1]/button')
+        google_click.click()
+        sleep(1)
+
+        indentify_box = self.driver.find_element(By.XPATH, value= '//*[@id="identifierId"]')
+        indentify_box.send_keys(os.getenv('mail'))
+        indentify_box.send_keys(Keys.ENTER)
+
+        sleep(2)  
+
+        pass_box = self.driver.find_element(By.XPATH, value='//*[@id="password"]/div[1]/div/div[1]/input')
+        
+        pass_box.send_keys(os.getenv('pass'))
+        pass_box.send_keys(Keys.ENTER)
+
+        sleep(10)
+
+        select_element = self.driver.find_element(By.XPATH, value= '//*[@id="persona-select"]')
+        select = Select(select_element)
+        select.select_by_visible_text("Pata: IA de patagonia")
+
 
     def apagar_ia(self):
         super().apagar_ia()
@@ -135,7 +185,28 @@ class PataChatBot(BaseChatBot):
 class YvonChatBot(BaseChatBot):
 
     def prender_ia(self):
-        super().prender_ia('https://chat.forefront.ai/') 
+        super().prender_ia(os.getenv('link')) 
+
+        google_click = self.driver.find_element(By.XPATH, value='//*[@id="__next"]/div/div/div/div/div[3]/div[1]/button')
+        google_click.click()
+        sleep(1)
+
+        indentify_box = self.driver.find_element(By.XPATH, value= '//*[@id="identifierId"]')
+        indentify_box.send_keys(os.getenv('mail'))
+        indentify_box.send_keys(Keys.ENTER)
+
+        sleep(2)  
+
+        pass_box = self.driver.find_element(By.XPATH, value='//*[@id="password"]/div[1]/div/div[1]/input')
+        
+        pass_box.send_keys(os.getenv('pass'))
+        pass_box.send_keys(Keys.ENTER)
+
+        sleep(10)
+
+        select_element = self.driver.find_element(By.XPATH, value= '//*[@id="persona-select"]')
+        select = Select(select_element)
+        select.select_by_visible_text("Yvon Chouinard")
 
     def apagar_ia(self):
         super().apagar_ia()
